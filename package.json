@@ -1,0 +1,23 @@
+{
+  "name": "covid-viewer",
+  "version": "1.0.0",
+  "description": "Node is required to run this project. The following modules need to be installed: -express -path",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dogukanavci/Covid-Viewer.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dogukanavci/Covid-Viewer/issues"
+  },
+  "homepage": "https://github.com/dogukanavci/Covid-Viewer#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "path": "^0.12.7"
+  }
+}

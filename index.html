@@ -1,0 +1,299 @@
+<html>
+<head>
+  <title>COVID-19 Viewer</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+  <script src="https://code.highcharts.com/maps/highmaps.js"></script>
+<script src="https://code.highcharts.com/maps/modules/data.js"></script>
+<script src="https://code.highcharts.com/maps/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/maps/modules/offline-exporting.js"></script>
+<script src="https://code.highcharts.com/mapdata/custom/world.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+</head>
+<body>
+  <div style="margin:90px;">
+    <nav class="navbar navbar-inverse navbar-static-top">
+  <div class="container">
+    <a href="/">
+      <h1 style="text-align:center" size="30"
+            face="verdana"
+            color="yellow">
+              COVID-19 VIEWER
+      </h1>
+    </a>
+  </div>
+</nav>
+    <div class="jumbotron"  style="padding:40px;">
+      <div id="container" style="width:100%; height:300px;"></div>
+      <div id="container2" style="width:100%; height:100px;">
+        <div id="first" style="width: 47%; float:left; height:300px; margin:10px">
+        </div>
+        <div id="second" style="width: 47%; float:right; height:300px; margin:10px">
+        </div>
+      </div>
+      <script type="text/javascript">
+      function convertDateFromNumerical(num){
+        let day = "";
+        let month = "";
+        if(num.length==4){
+          month = num[0]*10 + num[1];
+          day = num[num.length-2].toString() + num[num.length-1].toString();
+        }
+        else if(num.length==3){
+          month = num[0];
+          day = num[num.length-2].toString() + num[num.length-1].toString();
+        }
+        switch (month) {
+          case "1":
+            return "January "+day;
+            break;
+          case "2":
+            return "February "+day;
+            break;
+          case "3":
+            return "March "+day;
+            break;
+          case "4":
+            return "April "+day;
+            break;
+          case "5":
+            return "May "+day;
+            break;
+          case "6":
+            return "June "+day;
+            break;
+          case "7":
+            return "July "+day;
+            break;
+          case "8":
+            return "August "+day;
+            break;
+          case "9":
+            return "September "+day;
+            break;
+          case "10":
+            return "October "+day;
+            break;
+          case "11":
+            return "November "+day;
+            break;
+          case "12":
+            return "December "+day;
+            break;
+          default:
+            return num;
+        }
+      }
+      function insertTable(name,data,totalCases,precentageInfected){
+        let intro = "<h3>"+name+"</h3>";
+        intro += "<h5> Total Confirmed Cases: "+totalCases+"</h5>";
+        intro += "<h5> Percentage of Population Infected: "+precentageInfected+"%</h5>";
+        let table = "<table> <thead> <tr> <th>Date             </th> <th>|  Number of Cases </th> <th> |  Change             </th></tr> </thead><tbody>";
+        let prev;
+        for (var key in data) {
+          if(prev==undefined){
+            prev = data[key];
+          }
+          else{
+            let date = key;
+            let cases = data[key];
+            let change = Math.round( 100*(cases-prev)/prev );
+            if( !isFinite(change) || isNaN(change) ){
+              change = ""
+            }
+            else{
+              change += '%'
+            }
+            table += "<tr> <td>"+convertDateFromNumerical(date)+"</td> <td>||  "+cases+"</td> <td>||  "+ change+"</td> </tr>";
+            prev = cases;
+          }
+        }
+        table += "</tbody></table>";
+        document.getElementById("second").innerHTML = intro+table;
+      }
+      function serveClickedCountry(name,data,totalCases){
+        var url1 = 'https://restcountries.eu/rest/v2/name/'+name;
+        var req = new Request(url1);
+        fetch(req).then(response =>
+            response.json().then(data => ({
+              data: data,
+              status: response.status
+            })
+          ).then(res => {
+            let code = res.data[0].alpha2Code.toLowerCase();
+            let population = res.data[0].population;
+            insertTable(name,data,totalCases,Math.round( (totalCases/population)*100*1000 )/1000 );
+            var url2 = 'http://newsapi.org/v2/top-headlines?' +
+              'q=virus&' +
+              'country='+ code +'&'+
+              'sortBy=popularity&' +
+              'apiKey=54d129fcad4e45a0beff9be192468605';
+            var req = new Request(url2);
+            fetch(req).then(response =>
+                response.json().then(data => ({
+                  data: data,
+                  status: response.status
+                })
+              ).then(res => {
+                var news = "";
+                try {
+                  for (var ctr = 0; ctr < 2; ctr++) {
+                    news += "<div>";
+                    news += "<h5>";
+                    news += res.data.articles[ctr].title;
+                    news += "</h5>";
+                    news += "<p style=\"font-size:10px;\">";
+                    news += res.data.articles[ctr].description;
+                    news += "</p>";
+                    news += "<a href=\"";
+                    news += res.data.articles[ctr].url;
+                    news += "\"> View Full Article </a>";
+                    news += "</div>";
+                  }
+                  let intro = "<h4> Latest News of Covid-19 "+name+"</h4>";
+                  document.getElementById("first").innerHTML = intro+news;
+                } catch (e) {
+                  let intro = "<h4> Latest News of Covid-19 "+name+"</h4>";
+                  document.getElementById("first").innerHTML = intro + "There are no recent news";
+                }
+            }));
+        }));
+      }
+        document.addEventListener('DOMContentLoaded', function () {
+          Highcharts.data({
+    googleSpreadsheetKey: '1wuaMVDkw8SNqlXDBjNTDK7faTGT_G02U2Gv6XYeH8hQ',
+
+    parsed: function (columns) {
+        // Read the columns into the data array
+        var rawData = {};
+        var totalCases={};
+        var data = [];
+        var mostRecentDate = columns[columns.length - 1][0];
+        Highcharts.each(columns[0], function (code, i) {
+            if(i!=0){
+              data.push({
+                  value: parseFloat(columns[columns.length - 1][i]),
+                  name: code
+              });
+              casesByDate = {};
+              let totalNumberOfCases = parseFloat(columns[columns.length - 1][i]);
+              for (var k = columns.length-6; k < columns.length; k++) {
+                let date = columns[k][0];
+                let cases = columns[k][i] - columns[k-1][i];
+                casesByDate[date] = cases;
+              }
+
+              totalCases[code] = totalNumberOfCases;
+              rawData[code] = casesByDate;
+            }
+        });
+
+        Highcharts.mapChart('container', {
+            chart: {
+                map: 'custom/world',
+                borderWidth: 1
+            },
+
+            colors: ['rgba(19,64,117,0.05)', 'rgba(19,64,117,0.2)', 'rgba(19,64,117,0.4)',
+                'rgba(19,64,117,0.5)', 'rgba(19,64,117,0.6)', 'rgba(19,64,117,0.8)', 'rgba(19,64,117,1)'],
+
+            title: {
+                text: 'COVID-19 Cases by Country '+ convertDateFromNumerical(mostRecentDate)
+            },
+
+            mapNavigation: {
+                enabled: true
+            },
+
+            legend: {
+                title: {
+                    text: 'Number of Infected Individuals',
+                    style: {
+                        color: ( // theme
+                            Highcharts.defaultOptions &&
+                            Highcharts.defaultOptions.legend &&
+                            Highcharts.defaultOptions.legend.title &&
+                            Highcharts.defaultOptions.legend.title.style &&
+                            Highcharts.defaultOptions.legend.title.style.color
+                        ) || 'black'
+                    }
+                },
+                align: 'left',
+                verticalAlign: 'bottom',
+                floating: true,
+                layout: 'vertical',
+                valueDecimals: 0,
+                backgroundColor: ( // theme
+                    Highcharts.defaultOptions &&
+                    Highcharts.defaultOptions.legend &&
+                    Highcharts.defaultOptions.legend.backgroundColor
+                ) || 'rgba(255, 255, 255, 0.85)',
+                symbolRadius: 0,
+                symbolHeight: 14
+            },
+
+            colorAxis: {
+                dataClasses: [{
+                    to: 100
+                }, {
+                    from: 100,
+                    to: 500
+                }, {
+                    from: 500,
+                    to: 1000
+                }, {
+                    from: 1000,
+                    to: 5000
+                }, {
+                    from: 5000,
+                    to: 10000
+                }, {
+                    from: 10000,
+                    to: 50000
+                }, {
+                    from: 50000,
+                    to: 100000
+                }, {
+                    from: 100000,
+                }]
+            },
+
+            series: [{
+                data: data,
+                joinBy: ['name'],
+                animation: true,
+                name: 'Number of Infected Individuals',
+                states: {
+                    hover: {
+                        color: '#a4edba'
+                    }
+                },
+                tooltip: {
+                    valueSuffix: ''
+                },
+                shadow: false,
+                point:{
+                    events:{
+                        click: function(){
+                            serveClickedCountry(this.name,rawData[this.name],totalCases[this.name]);
+                        }
+                    }
+                }
+            }],
+        });
+    },
+    error: function () {
+        document.getElementById('container').innerHTML = '<div class="loading">' +
+            '<i class="icon-frown icon-large"></i> ' +
+            'Error loading data from Google Spreadsheets' +
+            '</div>';
+    }
+});
+
+        });
+      </script>
+    </div>
+  </div>
+</body>
+</html>

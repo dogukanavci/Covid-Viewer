@@ -1,0 +1,6 @@
+Node is required to run this project. The following modules need to be installed:
+-express
+-path
+
+To run the project, please run the following command: "node index.js"
+Following this execution, the project will start running at port 3000
